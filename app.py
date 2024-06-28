@@ -1,27 +1,32 @@
 from flask import Flask, render_template, request
 import pandas as pd
 from sklearn.naive_bayes import GaussianNB
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+import pickle
+import os
 
 app = Flask(__name__)
 
-# Load data and train the model
-heart_failure_data = pd.read_csv('heart_failure_clinical_records.csv')
-X = heart_failure_data.drop(columns=['death_event'])  # 'death_event' is the target column
-y = heart_failure_data['death_event']
+MODEL_PATH = 'gnb_model.pkl'
 
-# Split the dataset into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
+if not os.path.exists(MODEL_PATH):
+    heart_failure_data = pd.read_csv('/home/tandonsky/mysite/heart_failure_clinical_records.csv')
+    X = heart_failure_data.drop(columns=['death_event']) 
+    y = heart_failure_data['death_event']
 
-# Train the Gaussian Naive Bayes model
-gnb_model = GaussianNB()
-gnb_model.fit(X_train, y_train)
+    gnb_model = GaussianNB()
+    gnb_model.fit(X, y)
 
-# Evaluate the model
-y_pred = gnb_model.predict(X_test)
-accuracy = accuracy_score(y_pred, y_test) * 100
-print(f'Akurasi: {accuracy:.2f}%')
+    # Save the model
+    with open(MODEL_PATH, 'wb') as f:
+        pickle.dump(gnb_model, f)
+
+    # Output to confirm training completion
+    print("Model saved.")
+else:
+    # Load the model
+    with open(MODEL_PATH, 'rb') as f:
+        gnb_model = pickle.load(f)
+    print("Model has been loaded from disk.")
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
